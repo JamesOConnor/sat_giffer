@@ -55,7 +55,7 @@ ROOT_URLCONF = 'sat_giffer.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['sat_giffer/templates'],
+        'DIRS': ['static/map/templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
