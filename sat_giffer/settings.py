@@ -125,3 +125,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 STATICFILES_DIRS = [
     ('node_modules', os.path.join(BASE_DIR, 'node_modules')),
 ]
+
+AWS_KEY = os.environ.get('AWSAccessKeyId', None)
+AWS_SECRET = os.environ.get('AWSSecretKey', None)

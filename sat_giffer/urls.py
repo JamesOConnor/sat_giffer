@@ -21,5 +21,5 @@ from sat_giffer.views import leaflet_map, get_gif
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', leaflet_map),
-    path('bounds', get_gif),
+    path('bounds/', get_gif),
 ]

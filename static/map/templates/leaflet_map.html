@@ -7,6 +7,22 @@
     <div id="mapid" style="width: 100%; height: 100%;"></div>
 
     <script>
+
+
+        function httpGet(bounds)
+        {
+            console.log(bounds);
+            theUrl = '/bounds/?bounds=' + bounds;
+            console.log(theUrl);
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function() {
+                if (xmlHttp.readyState === 4 && xmlHttp.status === 200)
+                    callback(xmlHttp.responseText);
+            };
+            xmlHttp.open("GET", theUrl, true); // true for asynchronous
+            xmlHttp.send(null);
+        }
+
         var mymap = L.map('mapid').setView([51.505, -0.09], 13);
         var Esri_WorldImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
@@ -15,6 +31,7 @@
 
         var drawnItems = new L.FeatureGroup();
         mymap.addLayer(drawnItems);
+
         var drawControl = new L.Control.Draw({
             draw: {
                 polygon: false,
@@ -31,12 +48,14 @@
 
         mymap.addControl(drawControl);
         mymap.on(L.Draw.Event.CREATED, function (e) {
-           layer = e.layer;
-           console.log(layer);
-           mymap.addLayer(layer);
+            layer = e.layer;
+            console.log(layer._bounds._northEast.lat);
+            bounds = _.flatten(_.map(layer._bounds, function (ll) {return [ll.lat, ll.lng]}));
+            console.log(bounds.join());
+            httpGet(bounds.join());
+            mymap.addLayer(layer);
         });
-    </script>
 
-    <p>dicks</p>
+    </script>
 
 {% endblock %}
