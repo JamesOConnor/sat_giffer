@@ -94,6 +94,7 @@ def leaflet_map(request):
 
 def get_gif(request):
     body = request.GET.get('bounds', 'default')
+    toa = request.GET.get('toa', True)
     s, w, n, e = body.split(',')
     bbox_crs = 'epsg:4326'
     pg = box(float(w), float(s), float(e), float(n))
@@ -118,8 +119,12 @@ def get_gif(request):
 
     os.environ["AWS_REQUEST_PAYER"] = "requester"
 
-    keys = [i['properties']['s3URI'] for i in search_results if
-            first_tile in i['properties']['s3URI']]
+    if toa:
+        keys = [i['properties']['s3URI'] for i in search_results if
+                first_tile in i['properties']['s3URI']]
+    else:
+        keys = [i['properties']['s3URI'].replace('l1c', 'l2a') + 'R10m/' for i in search_results if
+                first_tile in i['properties']['s3URI']]
 
     with futures.ProcessPoolExecutor(max_workers=2) as executor:
         _worker = partial(rgb_for_key, bounds=bounds, vrt_params=vrt_params)

@@ -48,12 +48,12 @@
 
         mymap.addControl(drawControl);
         mymap.on(L.Draw.Event.CREATED, function (e) {
+            _.map(drawnItems._layers, function(layer){drawnItems.removeLayer(layer)});
             layer = e.layer;
-            console.log(layer._bounds._northEast.lat);
             bounds = _.flatten(_.map(layer._bounds, function (ll) {return [ll.lat, ll.lng]}));
             console.log(bounds.join());
+            drawnItems.addLayer(layer);
             httpGet(bounds.join());
-            mymap.addLayer(layer);
         });
 
     </script>
