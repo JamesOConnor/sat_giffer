@@ -20,5 +20,5 @@ from sat_giffer.views import leaflet_map
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('map/', leaflet_map),
+    path('', leaflet_map),
 ]
