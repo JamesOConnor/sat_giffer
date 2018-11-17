@@ -3,6 +3,7 @@ import math
 from concurrent import futures
 from functools import partial
 
+import boto3
 import numpy as np
 import rasterio
 from PIL import Image, ImageDraw
@@ -13,6 +14,7 @@ from rasterio.vrt import WarpedVRT
 from rasterio.warp import calculate_default_transform, Resampling
 
 session = rasterio.Env(AWSSession(aws_access_key_id=settings.AWS_KEY, aws_secret_access_key=settings.AWS_SECRET))
+MAX_WORKERS = 4
 
 
 def get_cropped_data_from_bucket(band, key, bounds, vrt_params, out_crs):
@@ -130,3 +132,46 @@ def make_gif(keys, data):
             draw.text((20, 50), '%s' % '-'.join(fn.split('/')[-5:-2]), fill=(255, 255, 255, 255))
             drawn.append(np.array(im))
     return drawn
+
+def upload_file_to_s3(body):
+    """
+    Uploads a given file to s3
+    :param body: filename
+    :return: None
+    """
+    s3_client = boto3.Session(settings.AWS_KEY, settings.AWS_SECRET).client('s3', region_name='eu-central-1')
+    s3_client.upload_file(Filename='gifs/%s.gif' % body, Bucket='sat-giffer', Key='gifs/%s.gif' % body,
+                          ExtraArgs={'ACL': 'public-read'})
+
+
+def get_s3_urls(first_tile, search_results, toa):
+    """
+    Get a filtered list of S3 URIs given a tile id and search results
+    :param first_tile: first tile to appear in the search
+    :param search_results: full results of the search
+    :param toa: whether to attempt to retrieve toa/boa data
+    :return: list of s3 URIs
+    """
+    if toa:
+        keys = [i['properties']['s3URI'] for i in search_results if
+                first_tile in i['properties']['s3URI']]
+    else:
+        keys = [i['properties']['s3URI'].replace('l1c', 'l2a') + 'R10m/' for i in search_results if
+                first_tile in i['properties']['s3URI']]
+    return keys
+
+
+def get_data_for_keys(bounds, keys, out_crs, vrt_params):
+    """
+    Get RGB data from AWS given a list of keys
+    :param bounds: bounding box of AOI
+    :param keys: List of S3 URIS
+    :param out_crs: output crs
+    :param vrt_params: params for transformation
+    :return: the data array
+    """
+    with futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        _worker = partial(rgb_for_key, bounds=bounds, vrt_params=vrt_params, out_crs=out_crs)
+        data = list(executor.map(_worker, keys))
+        gc.collect()
+    return data
