@@ -19,4 +19,4 @@ Requirements:
 
 Python requirements included in requirements.txt
 
-Javascript needs leaflet, leaflet-draw and underscore, all available on npm
+Javascript needs leaflet, leaflet-draw and underscore, all available on npm.
