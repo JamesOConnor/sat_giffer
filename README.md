@@ -1,3 +1,9 @@
+## Sat Giffer ##
+
+Downloads and presents sentinel data in gif form!
+
+![Should be here](https://im5.ezgif.com/tmp/ezgif-5-493a7feb4cc8.gif)
+
 Pet project in Django for making RGB satellite gifs from a slippy map box input. Inspired by [Vincent Sargo](https://twitter.com/_VincentS_)
 
 You'll need to update the paths in sat_giffer/settings to get it to run locally. You'll also need an AWS account + credentials for interactions with S3/The buckets hosting the satellite data.
