@@ -112,11 +112,12 @@ def get_utm_srid(lat, lon):
     return int(32700 - round((45 + lat) / 90, 0) * 100 + round((183 + lon) / 6, 0))
 
 
-def make_gif(keys, data):
+def make_gif(keys, data, toa):
     """
     Combine the data into a single array
     :param keys: Location of the tiles on AWS
     :param data: The image arrays
+    :param toa: toa True/False
     :return: Data with dates embedded on the gif
     """
     drawn = []
@@ -129,7 +130,10 @@ def make_gif(keys, data):
             i = np.hstack((np.zeros((i.shape[0], 100, 3)), i))
             im = Image.fromarray(np.clip((i * 255 / 2000), 0, 255).astype(np.uint8))
             draw = ImageDraw.Draw(im)
-            draw.text((20, 50), '%s' % '-'.join(fn.split('/')[-5:-2]), fill=(255, 255, 255, 255))
+            if toa:
+                draw.text((20, 50), '%s' % '-'.join(fn.split('/')[-5:-2]), fill=(255, 255, 255, 255))
+            else:
+                draw.text((20, 50), '%s' % '-'.join(fn.split('/')[-6:-3]), fill=(255, 255, 255, 255))
             drawn.append(np.array(im))
     return drawn
 

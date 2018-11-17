@@ -72,7 +72,7 @@ def get_gif(request):
         keys = keys[:10]
 
     data = get_data_for_keys(bounds, keys, out_crs, vrt_params)
-    drawn = make_gif(keys, data)
+    drawn = make_gif(keys, data, toa)
 
     if len(drawn) == 0:
         return HttpResponse("Couldn't find any cloud free images for that search!")
