@@ -14,15 +14,14 @@
             element.innerHTML = alert_info;
         }
 
-        function httpGet(bounds)
-        {
+        function httpGet(bounds) {
             console.log(bounds);
             var element = document.getElementById("downloads");
             element.innerHTML = 'Getting info for bounds, please await update...';
             theUrl = '/bounds/?bounds=' + bounds;
             console.log(theUrl);
             var xmlHttp = new XMLHttpRequest();
-            xmlHttp.onreadystatechange = function() {
+            xmlHttp.onreadystatechange = function () {
                 if (xmlHttp.readyState === 4 && xmlHttp.status === 200)
                     callback(xmlHttp.responseText);
             };
@@ -43,9 +42,9 @@
             draw: {
                 polygon: false,
                 marker: false,
-                polyline:false,
-                circlemarker:false,
-                circle:false
+                polyline: false,
+                circlemarker: false,
+                circle: false
             },
             edit: {
                 featureGroup: drawnItems,
@@ -55,9 +54,13 @@
 
         mymap.addControl(drawControl);
         mymap.on(L.Draw.Event.CREATED, function (e) {
-            _.map(drawnItems._layers, function(layer){drawnItems.removeLayer(layer)});
+            _.map(drawnItems._layers, function (layer) {
+                drawnItems.removeLayer(layer)
+            });
             layer = e.layer;
-            bounds = _.flatten(_.map(layer._bounds, function (ll) {return [ll.lat, ll.lng]}));
+            bounds = _.flatten(_.map(layer._bounds, function (ll) {
+                return [ll.lat, ll.lng]
+            }));
             console.log(bounds.join());
             drawnItems.addLayer(layer);
             httpGet(bounds.join());

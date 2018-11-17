@@ -13,6 +13,7 @@ from src.giffer import *
 
 MAX_WORKERS = 4
 
+
 def leaflet_map(request):
     """
     Show the slippy map as a view
@@ -88,4 +89,3 @@ def get_gif(request):
                           ExtraArgs={'ACL': 'public-read'})
     out_body = 'Your file is ready <a href="https://s3.eu-central-1.amazonaws.com/sat-giffer/gifs/%s.gif">here</a><br>' % body
     return HttpResponse(out_body)
-

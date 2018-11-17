@@ -14,6 +14,7 @@ from rasterio.warp import calculate_default_transform, Resampling
 
 session = rasterio.Env(AWSSession(aws_access_key_id=settings.AWS_KEY, aws_secret_access_key=settings.AWS_SECRET))
 
+
 def get_cropped_data_from_bucket(band, key, bounds, vrt_params, out_crs):
     """
     Recovered the data for a given band for a given scene

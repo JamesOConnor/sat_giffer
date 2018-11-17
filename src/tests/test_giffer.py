@@ -5,6 +5,7 @@ import numpy as np
 from src.giffer import make_gif
 from sat_giffer import settings
 
+
 class gifferTests(unittest.TestCase):
     def setUp(self):
         self.keys = np.load(settings.ROOT_DIR + '/src/tests/fixtures/keys.npy')
