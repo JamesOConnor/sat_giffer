@@ -6,7 +6,7 @@ An example of the application running is hosted [here](http://ec2-35-159-51-103.
 
 Output looks like a time series gif like this:
 
-![Should be here](https://s3.eu-central-1.amazonaws.com/sat-giffer/gifs/53.38884847726028%2C-6.365203857421876%2C53.41003495275093%2C-6.309585571289063.gif)
+![Should be here](https://media.giphy.com/media/2gYhRXt8ikmAO7FX2Z/giphy.gif)
 
 Requirements:
 
