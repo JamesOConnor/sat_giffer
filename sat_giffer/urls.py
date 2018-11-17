@@ -15,11 +15,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-
+from django.conf.urls.static import static
+from django.conf import settings
 from sat_giffer.views import leaflet_map, get_gif
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', leaflet_map),
     path('bounds/', get_gif),
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

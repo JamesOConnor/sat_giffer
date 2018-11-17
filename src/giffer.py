@@ -1,0 +1,131 @@
+import gc
+import math
+from concurrent import futures
+from functools import partial
+
+import numpy as np
+import rasterio
+from PIL import Image, ImageDraw
+from sat_giffer import settings
+from rasterio import transform
+from rasterio.session import AWSSession
+from rasterio.vrt import WarpedVRT
+from rasterio.warp import calculate_default_transform, Resampling
+
+session = rasterio.Env(AWSSession(aws_access_key_id=settings.AWS_KEY, aws_secret_access_key=settings.AWS_SECRET))
+
+def get_cropped_data_from_bucket(band, key, bounds, vrt_params, out_crs):
+    """
+    Recovered the data for a given band for a given scene
+    :param band: Number of the band of interest
+    :param key: Tile location on AWS
+    :param bounds: bounding box of the area of interest
+    :param vrt_params: meta dictionary for resulting fle
+    :param out_crs: output coordinate system
+    :return: the cropped data from the band for the bounds
+    """
+    f = key + 'B0%s.jp2' % band
+    with session:
+        with rasterio.open(f) as src:
+            vrt_transform, vrt_width, vrt_height = get_vrt_transform(src, bounds, bounds_crs=out_crs)
+
+            vrt_width = round(vrt_width)
+            vrt_height = round(vrt_height)
+            vrt_params.update(
+                dict(transform=vrt_transform, width=vrt_width, height=vrt_height)
+            )
+
+            with WarpedVRT(src, **vrt_params) as vrt:
+                data = vrt.read(
+                    out_shape=(1, vrt_height, vrt_width),
+                    resampling=Resampling.bilinear,
+                    indexes=[1],
+                )
+        gc.collect()
+        return data
+
+
+def rgb_for_key(key, bounds=None, vrt_params=None, out_crs=None):
+    """
+    Loops over Blue, Green and Red Sentinel bands to build a color image
+    :param key:
+    :param bounds:
+    :param vrt_params:
+    :param out_crs:
+    :return:
+    """
+    bands = ['2', '3', '4']
+    _worker = partial(get_cropped_data_from_bucket, key=key, bounds=bounds, vrt_params=vrt_params, out_crs=out_crs)
+    with futures.ProcessPoolExecutor(max_workers=3) as executor:
+        try:
+            data = np.concatenate(list(executor.map(_worker, bands)))
+        except:
+            return
+        gc.collect()
+    reshaped_data = np.zeros((data.shape[1], data.shape[2], data.shape[0]))
+    for i in range(3):
+        reshaped_data[:, :, abs(i - 2)] = data[i, :, :]
+    return reshaped_data
+
+
+def get_vrt_transform(src, bounds, bounds_crs='epsg:3857'):
+    """Calculate VRT transform.
+    Attributes
+    ----------
+    src : rasterio.io.DatasetReader
+        Rasterio io.DatasetReader object
+    bounds : list
+        Bounds (left, bottom, right, top)
+    bounds_crs : str
+        Coordinate reference system string (default "epsg:3857")
+    Returns
+    -------
+    vrt_transform: Affine
+        Output affine transformation matrix
+    vrt_width, vrt_height: int
+        Output dimensions
+    """
+    dst_transform, _, _ = calculate_default_transform(src.crs,
+                                                      bounds_crs,
+                                                      src.width,
+                                                      src.height,
+                                                      *src.bounds)
+    w, s, e, n = bounds
+    vrt_width = math.ceil((e - w) / dst_transform.a)
+    vrt_height = math.ceil((s - n) / dst_transform.e)
+
+    vrt_transform = transform.from_bounds(w, s, e, n, vrt_width, vrt_height)
+
+    return vrt_transform, vrt_width, vrt_height
+
+
+def get_utm_srid(lat, lon):
+    """
+    Calculate which utm zone the AOI should fall into
+    :param lat: Latitude in WGS84
+    :param lon: Longitude in WGS84
+    :return: Integer EPSG code
+    """
+    return int(32700 - round((45 + lat) / 90, 0) * 100 + round((183 + lon) / 6, 0))
+
+
+def make_gif(keys, data):
+    """
+    Combine the data into a single array
+    :param keys: Location of the tiles on AWS
+    :param data: The image arrays
+    :return: Data with dates embedded on the gif
+    """
+    drawn = []
+    for fn, i in zip(keys, data):
+        if i is None:
+            continue
+        if len(np.where(i[:, :, 2] == 0)[0]) > i[:, :, 2].size * 0.8:
+            continue
+        if len(np.where(i[:, :, 2] > 2000)[0]) < i[:, :, 2].size * 0.2:
+            i = np.hstack((np.zeros((i.shape[0], 100, 3)), i))
+            im = Image.fromarray(np.clip((i * 255 / 2000), 0, 255).astype(np.uint8))
+            draw = ImageDraw.Draw(im)
+            draw.text((20, 50), '%s' % '-'.join(fn.split('/')[-5:-2]), fill=(255, 255, 255, 255))
+            drawn.append(np.array(im))
+    return drawn

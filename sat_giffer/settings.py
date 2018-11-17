@@ -16,14 +16,13 @@ import os
 from configparser import RawConfigParser
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
+ROOT_DIR = '/home/khcbgdev005/james_projects/sat_giffer/'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
 CONFIG_PARSER = RawConfigParser()
-CONFIG_PARSER.read('../sat_giffer.ini')
-
+CONFIG_PARSER.read(ROOT_DIR + '../sat_giffer.ini')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = CONFIG_PARSER.get('secrets', 'SECRET_KEY')
 
