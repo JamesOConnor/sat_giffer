@@ -4,7 +4,7 @@ Downloads and presents sentinel data in gif form!
 
 [Demo hosted here](http://ec2-35-159-51-103.eu-central-1.compute.amazonaws.com/). It's a micro-instance so tends to give up sometimes :X
 
-![Should be here](https://im5.ezgif.com/tmp/ezgif-5-493a7feb4cc8.gif)
+![Should be here](https://s3.eu-central-1.amazonaws.com/sat-giffer/demo-gif.gif)
 
 ### Description ###
 A Django project for making RGB satellite gifs from a slippy map box input. Inspired by [Vincent Sargo](https://twitter.com/_VincentS_)
