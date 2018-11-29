@@ -9,7 +9,9 @@ from sentinelhub import common
 from shapely.geometry import box
 
 from src.giffer import *
+import logging
 
+logging.basicConfig(filename='sat-giffer.log',level=logging.INFO)
 
 def leaflet_map(request):
     """
@@ -70,10 +72,13 @@ def get_gif(request):
 
     if len(keys) > 10:
         keys = keys[:10]
-
+    logging.info(keys)
     data = get_data_for_keys(bounds, keys, out_crs, vrt_params)
+    logging.info('Data retrieved: ')
+    logging.info(data)
     drawn = make_gif(keys, data, toa)
-
+    logging.info('Dates added to image files')
+    logging.info(drawn)
     if len(drawn) == 0:
         return HttpResponse("Couldn't find any cloud free images for that search!")
     imageio.mimwrite('gifs/%s.gif' % body, drawn[::-1], fps=1)
