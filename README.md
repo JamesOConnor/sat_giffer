@@ -1,6 +1,6 @@
 ## Sat Giffer ##
 
-Downloads and presents sentinel data in gif form!
+Downloads and presents sentinel data in gif form! Default is to get atmospherically corrected data, which is limited to certain regions.
 
 [Demo hosted here](http://ec2-35-159-51-103.eu-central-1.compute.amazonaws.com/). It's a micro-instance so tends to give up sometimes :X
 
@@ -13,7 +13,7 @@ You'll need to update the paths in sat_giffer/settings to get it to run locally.
 
 Output looks like a time series gif like this:
 
-![Should be here](https://media.giphy.com/media/2gYhRXt8ikmAO7FX2Z/giphy.gif)
+![Should be here](https://s3.eu-central-1.amazonaws.com/sat-giffer/gifs/53.49818991811629,-6.66046142578125,53.52432264973584,-6.613082885742188.gif)
 
 Requirements:
 
