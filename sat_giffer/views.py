@@ -74,11 +74,9 @@ def get_gif(request):
         keys = keys[:10]
     logging.info(keys)
     data = get_data_for_keys(bounds, keys, out_crs, vrt_params)
-    logging.info('Data retrieved: ')
-    logging.info(data)
+    logging.info('Data retrieved')
     drawn = make_gif(keys, data, toa)
     logging.info('Dates added to image files')
-    logging.info(drawn)
     if len(drawn) == 0:
         return HttpResponse("Couldn't find any cloud free images for that search!")
     imageio.mimwrite('gifs/%s.gif' % body, drawn[::-1], fps=1)
