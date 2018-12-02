@@ -1,3 +1,4 @@
+import logging
 import os
 
 import imageio
@@ -9,9 +10,8 @@ from sentinelhub import common
 from shapely.geometry import box
 
 from src.giffer import *
-import logging
 
-logging.basicConfig(filename='sat-giffer.log',level=logging.INFO)
+logging.basicConfig(format='%(asctime)s %(message)s', filename='sat-giffer.log',level=logging.INFO)
 
 def leaflet_map(request):
     """
