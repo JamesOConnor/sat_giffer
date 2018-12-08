@@ -20,7 +20,7 @@ class gifferTests(unittest.TestCase):
         """
         Test gifs are being produced correctly
         """
-        actual = make_gif(self.keys, self.data)
+        actual = make_gif(self.keys, self.data, toa=True)
         np.testing.assert_array_equal(actual, self.expected)
 
     def test_get_s3_urls_toa(self):
