@@ -11,20 +11,24 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+import sys
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 from configparser import RawConfigParser
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ROOT_DIR = '/home/khcbgdev005/james_projects/sat_giffer/'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
-CONFIG_PARSER = RawConfigParser()
-CONFIG_PARSER.read(ROOT_DIR + '../sat_giffer.ini')
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = CONFIG_PARSER.get('secrets', 'SECRET_KEY')
+if not 'test' in sys.argv[0]:
+    CONFIG_PARSER = RawConfigParser()
+    CONFIG_PARSER.read(os.path.join(BASE_DIR + '/../sat_giffer.ini'))
+    # SECURITY WARNING: keep the secret key used in production secret!
+    SECRET_KEY = CONFIG_PARSER.get('secrets', 'SECRET_KEY')
+    AWS_KEY = CONFIG_PARSER.get('secrets', 'AWSAccessKeyId')
+    AWS_SECRET = CONFIG_PARSER.get('secrets', 'AWSSecretKey')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -129,5 +133,3 @@ STATICFILES_DIRS = [
     ('node_modules', os.path.join(BASE_DIR, 'node_modules')),
 ]
 
-AWS_KEY = CONFIG_PARSER.get('secrets', 'AWSAccessKeyId')
-AWS_SECRET = CONFIG_PARSER.get('secrets', 'AWSSecretKey')

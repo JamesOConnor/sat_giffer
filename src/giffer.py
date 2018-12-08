@@ -1,5 +1,6 @@
 import gc
 import math
+import sys
 from concurrent import futures
 from functools import partial
 
@@ -13,7 +14,9 @@ from rasterio.session import AWSSession
 from rasterio.vrt import WarpedVRT
 from rasterio.warp import calculate_default_transform, Resampling
 
-session = rasterio.Env(AWSSession(aws_access_key_id=settings.AWS_KEY, aws_secret_access_key=settings.AWS_SECRET))
+session = rasterio.Env(
+    AWSSession(aws_access_key_id=settings.AWS_KEY, aws_secret_access_key=settings.AWS_SECRET)) if 'test' not in \
+                                                                                                  sys.argv[0] else None
 MAX_WORKERS = 4
 
 
@@ -136,6 +139,7 @@ def make_gif(keys, data, toa):
                 draw.text((20, 50), '%s' % '-'.join(fn.split('/')[-6:-3]), fill=(255, 255, 255, 255))
             drawn.append(np.array(im))
     return drawn
+
 
 def upload_file_to_s3(body):
     """

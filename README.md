@@ -9,7 +9,7 @@ Downloads and presents sentinel data in gif form! Default is to get atmospherica
 ### Description ###
 A Django project for making RGB satellite gifs from a slippy map box input. Inspired by [Vincent Sargo](https://twitter.com/_VincentS_)
 
-You'll need to update the paths in sat_giffer/settings to get it to run locally. You'll also need an AWS account + credentials for interactions with S3/The buckets hosting the satellite data.
+You'll also need an AWS account + credentials for interactions with S3/The buckets hosting the satellite data.
 
 Output looks like a time series gif like this:
 

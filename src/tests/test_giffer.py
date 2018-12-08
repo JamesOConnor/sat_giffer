@@ -8,12 +8,12 @@ from sat_giffer import settings
 
 class gifferTests(unittest.TestCase):
     def setUp(self):
-        self.keys = np.load(settings.ROOT_DIR + '/src/tests/fixtures/keys.npy')
-        self.keys2 = np.load(settings.ROOT_DIR + '/src/tests/fixtures/keys2.npy')
-        self.keys_toa = np.load(settings.ROOT_DIR + '/src/tests/fixtures/keys_toa.npy')
-        self.data = np.load(settings.ROOT_DIR + '/src/tests/fixtures/data.npy')
-        self.expected = np.load(settings.ROOT_DIR + '/src/tests/fixtures/gif.npy')
-        self.search_results = np.load(settings.ROOT_DIR + '/src/tests/fixtures/search_results.npy')
+        self.keys = np.load(settings.BASE_DIR + '/src/tests/fixtures/keys.npy')
+        self.keys2 = np.load(settings.BASE_DIR + '/src/tests/fixtures/keys2.npy')
+        self.keys_toa = np.load(settings.BASE_DIR + '/src/tests/fixtures/keys_toa.npy')
+        self.data = np.load(settings.BASE_DIR + '/src/tests/fixtures/data.npy')
+        self.expected = np.load(settings.BASE_DIR + '/src/tests/fixtures/gif.npy')
+        self.search_results = np.load(settings.BASE_DIR + '/src/tests/fixtures/search_results.npy')
         self.first_tile = '29/U/PV'
 
     def test_make_gif(self):
