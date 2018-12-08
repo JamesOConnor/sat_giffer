@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/JamesOConnor/sat_giffer.svg?branch=master)](https://travis-ci.org/JamesOConnor/sat_giffer)
+[![Coverage Status](https://coveralls.io/repos/github/JamesOConnor/sat_giffer/badge.svg?branch=master)](https://coveralls.io/github/JamesOConnor/sat_giffer?branch=master)
 ## Sat Giffer ##
 
 Downloads and presents sentinel data in gif form! Default is to get atmospherically corrected data, which is limited to certain regions.
