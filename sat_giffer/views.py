@@ -1,5 +1,6 @@
 import logging
 import os
+from datetime import datetime
 
 import imageio
 import sentinelhub
@@ -11,7 +12,8 @@ from shapely.geometry import box
 
 from src.giffer import *
 
-logging.basicConfig(format='%(asctime)s %(message)s', filename='sat-giffer.log',level=logging.INFO)
+logging.basicConfig(format='%(asctime)s %(message)s', filename='sat-giffer.log', level=logging.INFO)
+
 
 def leaflet_map(request):
     """
@@ -35,7 +37,8 @@ def get_gif(request):
     boundingbox = box(float(w), float(s), float(e), float(n))
     bbox = common.BBox(boundingbox.bounds, crs=bbox_crs)
 
-    search_results = sentinelhub.opensearch.get_area_info(bbox, ('2015-06-01', '2018-11-01'), maxcc=0.1)
+    search_results = sentinelhub.opensearch.get_area_info(bbox, ('2015-06-01', datetime.now().strftime('%Y-%m-%d')),
+                                                          maxcc=0.1)
     if len(search_results) == 0:
         return HttpResponse("Couldn't find any images for that search!")
 
