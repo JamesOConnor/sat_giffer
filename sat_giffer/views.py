@@ -1,7 +1,9 @@
+import base64
+import json
 import logging
 import os
+from io import BytesIO
 
-import imageio
 import sentinelhub
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -34,8 +36,7 @@ def get_gif(request):
     bbox_crs = 'epsg:4326'
     boundingbox = box(float(w), float(s), float(e), float(n))
     bbox = common.BBox(boundingbox.bounds, crs=bbox_crs)
-
-    search_results = sentinelhub.opensearch.get_area_info(bbox, ('2015-06-01', '2018-11-01'), maxcc=0.1)
+    search_results = sentinelhub.opensearch.get_area_info(bbox, ('2015-06-01', datetime.now().strftime('%Y-%m-%d')), maxcc=0.1)
     if len(search_results) == 0:
         return HttpResponse("Couldn't find any images for that search!")
 
@@ -49,8 +50,6 @@ def get_gif(request):
     bounds2 = transform_bounds(bbox_crs, 'epsg:3410', *boundingbox.bounds, densify_pts=21)
 
     equal_area_boundingbox = box(float(bounds2[0]), float(bounds2[1]), float(bounds2[2]), float(bounds2[3]))
-    if equal_area_boundingbox.area / 10000 < 100:
-        return HttpResponse('Selected area too small, please select an area over 100 ha')
     if equal_area_boundingbox.area / 10000 > 1000:
         return HttpResponse('Selected area too large, please select an area under 1000 ha')
 
@@ -72,14 +71,20 @@ def get_gif(request):
 
     if len(keys) > 10:
         keys = keys[:10]
+    keys = keys[:1]
     logging.info(keys)
     data = get_data_for_keys(bounds, keys, out_crs, vrt_params)
     logging.info('Data retrieved')
-    drawn = make_gif(keys, data, toa)
-    logging.info('Dates added to image files')
-    if len(drawn) == 0:
-        return HttpResponse("Couldn't find any cloud free images for that search!")
-    imageio.mimwrite('gifs/%s.gif' % body, drawn[::-1], fps=1)
-    upload_file_to_s3(body)
-    out_body = 'Your file is ready <a href="https://s3.eu-central-1.amazonaws.com/sat-giffer/gifs/%s.gif">here</a><br>' % body
-    return HttpResponse(out_body)
+    sio = BytesIO()
+    im = Image.fromarray((data[0].clip(0,1)*255).astype(np.uint8))
+    im.save(sio, 'png')
+    sio.seek(0)
+    im.save('gifs/%s.png'%body)
+    url = "https://s3.eu-central-1.amazonaws.com/sat-giffer/gifs/%s.png"%body
+    upload_file_to_s3('gifs/%s.png'%body)
+    im = base64.b64encode(sio.read()).decode()
+    stream_response = "data:image/png;base64," + im
+    date = '-'.join(keys[0].split('/')[-6:-3])
+    resp = json.dumps({'data':'<img src = "%s"/> <br> <p> Date: %s, Mean NDVI: %0.2f </p>'%(stream_response, date, data[0].mean()), 'url':url,
+                       'bounds':[body.split(',')[:2], body.split(',')[2:]]})
+    return HttpResponse(resp)

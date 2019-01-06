@@ -48,19 +48,19 @@ def get_cropped_data_from_bucket(band, key, bounds, vrt_params, out_crs):
                     indexes=[1],
                 )
         gc.collect()
-        return data
+        return data / 10000
 
 
-def rgb_for_key(key, bounds=None, vrt_params=None, out_crs=None):
+def ndvi_for_key(key, bounds=None, vrt_params=None, out_crs=None):
     """
-    Loops over Blue, Green and Red Sentinel bands to build a color image
+    Loops over nir and red bands to generate an ndvi image
     :param key:
     :param bounds:
     :param vrt_params:
     :param out_crs:
     :return:
     """
-    bands = ['2', '3', '4']
+    bands = ['4', '8']
     _worker = partial(get_cropped_data_from_bucket, key=key, bounds=bounds, vrt_params=vrt_params, out_crs=out_crs)
     with futures.ProcessPoolExecutor(max_workers=3) as executor:
         try:
@@ -68,10 +68,8 @@ def rgb_for_key(key, bounds=None, vrt_params=None, out_crs=None):
         except:
             return
         gc.collect()
-    reshaped_data = np.zeros((data.shape[1], data.shape[2], data.shape[0]))
-    for i in range(3):
-        reshaped_data[:, :, abs(i - 2)] = data[i, :, :]
-    return reshaped_data
+    ndvi = (data[1] - data[0])/(data[1] + data[0])
+    return ndvi
 
 
 def get_vrt_transform(src, bounds, bounds_crs='epsg:3857'):
@@ -148,7 +146,7 @@ def upload_file_to_s3(body):
     :return: None
     """
     s3_client = boto3.Session(settings.AWS_KEY, settings.AWS_SECRET).client('s3', region_name='eu-central-1')
-    s3_client.upload_file(Filename='gifs/%s.gif' % body, Bucket='sat-giffer', Key='gifs/%s.gif' % body,
+    s3_client.upload_file(Filename='%s' % body, Bucket='sat-giffer', Key='%s' % body,
                           ExtraArgs={'ACL': 'public-read'})
 
 
@@ -179,7 +177,7 @@ def get_data_for_keys(bounds, keys, out_crs, vrt_params):
     :return: the data array
     """
     with futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        _worker = partial(rgb_for_key, bounds=bounds, vrt_params=vrt_params, out_crs=out_crs)
+        _worker = partial(ndvi_for_key, bounds=bounds, vrt_params=vrt_params, out_crs=out_crs)
         data = list(executor.map(_worker, keys))
         gc.collect()
     return data

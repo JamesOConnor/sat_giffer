@@ -9,9 +9,13 @@
     <div id="mapid" style="width: 100%; height: 100%;"></div>
 
     <script>
-        function callback(alert_info) {
+
+        function callback(response) {
             var element = document.getElementById("downloads");
-            element.innerHTML = alert_info;
+            response = JSON.parse(response);
+            console.log(response);
+            element.innerHTML = response.data;
+            L.imageOverlay(response.url, response.bounds).addTo(mymap);
         }
 
         function httpGet(bounds) {
@@ -23,7 +27,7 @@
             var xmlHttp = new XMLHttpRequest();
             xmlHttp.onreadystatechange = function () {
                 if (xmlHttp.readyState === 4 && xmlHttp.status === 200)
-                    callback(xmlHttp.responseText);
+                    callback(xmlHttp.response);
             };
             xmlHttp.open("GET", theUrl, true); // true for asynchronous
             xmlHttp.send(null);
@@ -53,6 +57,7 @@
         });
 
         mymap.addControl(drawControl);
+
         mymap.on(L.Draw.Event.CREATED, function (e) {
             _.map(drawnItems._layers, function (layer) {
                 drawnItems.removeLayer(layer)
