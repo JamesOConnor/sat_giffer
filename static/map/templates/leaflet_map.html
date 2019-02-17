@@ -70,6 +70,8 @@
             xmlHttp.onreadystatechange = function () {
                 if (xmlHttp.readyState === 4 && xmlHttp.status === 200)
                     callback(xmlHttp.response);
+                else if (xmlHttp.status === 400);
+                    element.innerHTML = 'No data found for this query';
             };
             xmlHttp.open("GET", theUrl, true); // true for asynchronous
             xmlHttp.send(null);

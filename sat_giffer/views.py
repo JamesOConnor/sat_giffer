@@ -83,10 +83,15 @@ def get_gif(request):
     """
     body = request.GET.get('bounds', 'default')
     toa = request.GET.get('toa', True)
-    start_date = request.GET.get('start_date', '01/01/2019')
+    start_date = request.GET.get('start_date')
+    if not start_date:
+        start_date = '01/01/2019'
     end_date = request.GET.get('end_date', None)
+    print('SD: %s'%start_date)
     start_date = date_formatter(start_date)
     end_date = date_formatter(end_date)
+    print(start_date, end_date)
+
     s, w, n, e = body.split(',')
     bbox_crs = 'epsg:4326'
     boundingbox = box(float(w), float(s), float(e), float(n))
@@ -96,8 +101,11 @@ def get_gif(request):
         return HttpResponse("Couldn't find any images for that search!")
 
     # Select a single tile (redupe)
-    first_tile = '/'.join([search_result['properties']['s3Path'] for search_result in search_results if
+    try:
+        first_tile = '/'.join([search_result['properties']['s3Path'] for search_result in search_results if
                            '/1/' not in search_result['properties']['s3Path']][0].split('/')[1:4])
+    except IndexError:
+        return HttpResponse('No data found for this query!')
 
     out_crs = 'epsg:%s' % get_utm_srid(search_results[-1]['properties']['centroid']['coordinates'][1],
                                        search_results[-1]['properties']['centroid']['coordinates'][0])
