@@ -5,24 +5,66 @@
 {% block js %}
     {{ block.super }}
     <p>Draw a box and await instructions, your file will be prepared shortly</p>
+    <p>Start date: <input type="text" id="start_date"></p>
+    <p>End date: <input type="text" id="end_date"></p>
     <h2 id="downloads"></h2>
-    <div id="mapid" style="width: 100%; height: 100%;"></div>
+    <div id="chart" style="width: 50%; height: 100%; float:left;">
+    </div>
+    <div id="mapid" style="width: 50%; height: 100%; float:right;">
+    </div>
 
     <script>
 
         function callback(response) {
             var element = document.getElementById("downloads");
+            const parsed = {ndvi: []};
             response = JSON.parse(response);
-            console.log(response);
-            element.innerHTML = response.data;
-            L.imageOverlay(response.url, response.bounds).addTo(mymap);
+            // element.innerHTML = response.data;
+            data = JSON.parse(response.data);
+            parsed["ndvi"] = _.map(data, function (item) {
+                return [item.Date, item.Mean]
+            });
+            console.log(parsed["ndvi"]);
+            Highcharts.chart('chart', {
+                xAxis: {type: 'datetime'},
+                title: {
+                    text: 'NDVI for plot'
+                },
+
+                yAxis: {
+                    title: {
+                        text: 'NDVI'
+                    }
+                },
+
+                series: [{
+                    data: parsed["ndvi"],
+                    tooltip: {
+                        valueDecimals: 2
+                    },
+                    name: 'NDVI'
+                }],
+                plotOptions: {
+                    spline: {
+                        marker: {
+                            radius: 4,
+                            lineColor: '#666666',
+                            lineWidth: 1
+                        }
+                    }
+                },
+
+            });
+            // L.imageOverlay(response.url, response.bounds).addTo(mymap);
         }
 
         function httpGet(bounds) {
             console.log(bounds);
             var element = document.getElementById("downloads");
+            var start_date = document.getElementById("start_date");
+            var end_date = document.getElementById("end_date");
             element.innerHTML = 'Getting info for bounds, please await update...';
-            theUrl = '/bounds/?bounds=' + bounds;
+            theUrl = '/bounds/?bounds=' + bounds + '&start_date=' + start_date.value + '&end_date=' + end_date.value;
             console.log(theUrl);
             var xmlHttp = new XMLHttpRequest();
             xmlHttp.onreadystatechange = function () {
@@ -44,7 +86,7 @@
 
         var drawControl = new L.Control.Draw({
             draw: {
-                polygon: false,
+                polygon: true,
                 marker: false,
                 polyline: false,
                 circlemarker: false,

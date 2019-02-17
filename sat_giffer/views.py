@@ -1,19 +1,62 @@
 import base64
+import datetime
 import json
 import logging
 import os
 from io import BytesIO
 
+import requests
 import sentinelhub
+import wget
 from django.http import HttpResponse
 from django.shortcuts import render
 from rasterio.warp import transform_bounds
 from sentinelhub import common
 from shapely.geometry import box
+import pandas as pd
 
 from src.giffer import *
 
-logging.basicConfig(format='%(asctime)s %(message)s', filename='sat-giffer.log',level=logging.INFO)
+logging.basicConfig(format='%(asctime)s %(message)s', filename='sat-giffer.log', level=logging.INFO)
+
+query_dict = {'34TEK': '(40.112712, 21.580847)', '34TFK': '(40.116753, 22.734850)', '34SFJ': '(39.312515, 22.898818)',
+              '34SEJ': '(39.182069, 21.772864)'}
+
+SEARCH_URL = 'https://scihub.copernicus.eu/dhus/search?q=footprint:"Intersects%s" ' \
+             'AND ingestiondate:[2018-01-14T20:28:45.963Z TO 2019-01-14T20:28:45.963Z] ' \
+             'AND producttype:S2MSI2A ' \
+             'AND cloudcoverpercentage:[0 TO 0.1]' \
+             '&rows=100&start=0&format=json'
+
+
+def get_file(url, fname):
+    r = requests.get(url, stream=True, auth=('ucfajoc', 'ibi7Fepi'))
+    with open(fname, 'wb') as f:
+        for chunk in r.iter_content(chunk_size=1024):
+            if chunk:  # filter out keep-alive new chunks
+                f.write(chunk)
+                f.flush()
+    return fname
+
+#
+# for key in query_dict.keys():
+#     s = SEARCH_URL % query_dict[key]
+#     r = requests.get(s, auth=('ucfajoc', 'ibi7Fepi')).json()
+#     try:
+#         first = r['feed']['entry'][0]
+#     except:
+#         try:
+#             first = r['feed']['entry']
+#         except:
+#             continue
+#     url = first['link'][0]['href']
+#     date = first['date'][0]['content'].split('T')[0]
+#     print('downloading to %s'%'%s_%s.zip'%(key, date))
+#     fn = '/media/khcbgdev005/khcbgdev0051/george2/%s_%s.zip'%(key, date)
+#     if os.path.exists(fn):
+#         continue
+#     get_file(url, fn)
+
 
 def leaflet_map(request):
     """
@@ -23,6 +66,14 @@ def leaflet_map(request):
     """
     return render(request, 'leaflet_map.html')
 
+def date_formatter(date):
+    if not date:
+        return datetime.datetime.now().date().strftime('%Y-%m-%d')
+    day = date.split('/')[1]
+    month = date.split('/')[0]
+    year = date.split('/')[2]
+    return '%s-%s-%s'%(year, month, day)
+
 
 def get_gif(request):
     """
@@ -31,20 +82,25 @@ def get_gif(request):
     :return: A message with an s3 URL where the file is hosted
     """
     body = request.GET.get('bounds', 'default')
-    toa = request.GET.get('toa', False)
+    toa = request.GET.get('toa', True)
+    start_date = request.GET.get('start_date', '01/01/2019')
+    end_date = request.GET.get('end_date', None)
+    start_date = date_formatter(start_date)
+    end_date = date_formatter(end_date)
     s, w, n, e = body.split(',')
     bbox_crs = 'epsg:4326'
     boundingbox = box(float(w), float(s), float(e), float(n))
     bbox = common.BBox(boundingbox.bounds, crs=bbox_crs)
-    search_results = sentinelhub.opensearch.get_area_info(bbox, ('2015-06-01', datetime.now().strftime('%Y-%m-%d')), maxcc=0.1)
+    search_results = sentinelhub.opensearch.get_area_info(bbox, (start_date, end_date), maxcc=0.1)
     if len(search_results) == 0:
         return HttpResponse("Couldn't find any images for that search!")
 
     # Select a single tile (redupe)
-    first_tile = '/'.join(search_results[0]['properties']['s3URI'].split('/')[4:7])
+    first_tile = '/'.join([search_result['properties']['s3Path'] for search_result in search_results if
+                           '/1/' not in search_result['properties']['s3Path']][0].split('/')[1:4])
 
-    out_crs = 'epsg:%s' % get_utm_srid(search_results[0]['properties']['centroid']['coordinates'][1],
-                                       search_results[0]['properties']['centroid']['coordinates'][0])
+    out_crs = 'epsg:%s' % get_utm_srid(search_results[-1]['properties']['centroid']['coordinates'][1],
+                                       search_results[-1]['properties']['centroid']['coordinates'][0])
 
     bounds = transform_bounds(bbox_crs, out_crs, *boundingbox.bounds, densify_pts=21)
     bounds2 = transform_bounds(bbox_crs, 'epsg:3410', *boundingbox.bounds, densify_pts=21)
@@ -68,23 +124,30 @@ def get_gif(request):
     os.environ["AWS_REQUEST_PAYER"] = "requester"
 
     keys = get_s3_urls(first_tile, search_results, toa)
-
     if len(keys) > 10:
         keys = keys[:10]
-    keys = keys[:1]
+    #keys = keys[:1]
     logging.info(keys)
+    print(datetime.datetime.now())
     data = get_data_for_keys(bounds, keys, out_crs, vrt_params)
+    print(datetime.datetime.now())
     logging.info('Data retrieved')
-    sio = BytesIO()
-    im = Image.fromarray((data[0].clip(0,1)*255).astype(np.uint8))
-    im.save(sio, 'png')
-    sio.seek(0)
-    im.save('gifs/%s.png'%body)
-    url = "https://s3.eu-central-1.amazonaws.com/sat-giffer/gifs/%s.png"%body
-    upload_file_to_s3('gifs/%s.png'%body)
-    im = base64.b64encode(sio.read()).decode()
-    stream_response = "data:image/png;base64," + im
-    date = '-'.join(keys[0].split('/')[-6:-3])
-    resp = json.dumps({'data':'<img src = "%s"/> <br> <p> Date: %s, Mean NDVI: %0.2f </p>'%(stream_response, date, data[0].mean()), 'url':url,
-                       'bounds':[body.split(',')[:2], body.split(',')[2:]]})
+    im = Image.fromarray((data[0].clip(0, 1) * 255).astype(np.uint8))
+    im.save('gifs/%s.png' % body)
+    upload_file_to_s3('gifs/%s.png' % body)
+
+    url = "https://s3.eu-central-1.amazonaws.com/sat-giffer/gifs/%s.png" % body
+    data_raw = [['-'.join(keys[n].split('/')[-5:-2]), data[n].mean(), data[n].min(), data[n].max(), data[n].std()] for n in range(len(data))]
+    data = pd.DataFrame(data_raw, columns=['Date', 'Mean', 'Min', 'Max', 'Std'])
+    data['Date'] = pd.to_datetime(data['Date'])
+    data['Date'] = datetime_to_moment(data['Date'])
+    resp = json.dumps({'data': data.to_json(orient='records'), 'url': url, 'bounds': [body.split(',')[:2], body.split(',')[2:]]})
     return HttpResponse(resp)
+
+def datetime_to_moment(series):
+    """
+    Returns a moment (for use in javascript) given a datetime pandas series
+    :param series: pandas series of datetime objects
+    :return: pandas series of moments
+    """
+    return json.loads(series.to_json(orient='values'))
