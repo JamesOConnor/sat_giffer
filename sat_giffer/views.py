@@ -1,6 +1,6 @@
+import datetime
 import logging
 import os
-from datetime import datetime
 
 import imageio
 import sentinelhub
@@ -14,7 +14,6 @@ from src.giffer import *
 
 logging.basicConfig(format='%(asctime)s %(message)s', filename='sat-giffer.log', level=logging.INFO)
 
-
 def leaflet_map(request):
     """
     Show the slippy map as a view
@@ -22,6 +21,14 @@ def leaflet_map(request):
     :return:
     """
     return render(request, 'leaflet_map.html')
+
+def date_formatter(date):
+    if not date:
+        return datetime.datetime.now().date().strftime('%Y-%m-%d')
+    day = date.split('/')[1]
+    month = date.split('/')[0]
+    year = date.split('/')[2]
+    return '%s-%s-%s'%(year, month, day)
 
 
 def get_gif(request):
@@ -31,29 +38,31 @@ def get_gif(request):
     :return: A message with an s3 URL where the file is hosted
     """
     body = request.GET.get('bounds', 'default')
-    toa = request.GET.get('toa', False)
+    toa = request.GET.get('toa', True)
+    start_date = request.GET.get('start_date')
+    if not start_date:
+        start_date = '01/10/2018'
+    end_date = request.GET.get('end_date', None)
+    start_date = date_formatter(start_date)
+    end_date = date_formatter(end_date)
+
     s, w, n, e = body.split(',')
     bbox_crs = 'epsg:4326'
     boundingbox = box(float(w), float(s), float(e), float(n))
     bbox = common.BBox(boundingbox.bounds, crs=bbox_crs)
-
-    search_results = sentinelhub.opensearch.get_area_info(bbox, ('2015-06-01', datetime.now().strftime('%Y-%m-%d')),
-                                                          maxcc=0.1)
+    search_results = sentinelhub.opensearch.get_area_info(bbox, (start_date, end_date), maxcc=0.1)
     if len(search_results) == 0:
         return HttpResponse("Couldn't find any images for that search!")
 
     # Select a single tile (redupe)
-    first_tile = '/'.join(search_results[0]['properties']['s3URI'].split('/')[4:7])
-
-    out_crs = 'epsg:%s' % get_utm_srid(search_results[0]['properties']['centroid']['coordinates'][1],
-                                       search_results[0]['properties']['centroid']['coordinates'][0])
+    first_tile = '/'.join(search_results[0]['properties']['s3Path'].split('/')[1:4])
+    out_crs = 'epsg:%s' % get_utm_srid(search_results[-1]['properties']['centroid']['coordinates'][1],
+                                       search_results[-1]['properties']['centroid']['coordinates'][0])
 
     bounds = transform_bounds(bbox_crs, out_crs, *boundingbox.bounds, densify_pts=21)
     bounds2 = transform_bounds(bbox_crs, 'epsg:3410', *boundingbox.bounds, densify_pts=21)
 
     equal_area_boundingbox = box(float(bounds2[0]), float(bounds2[1]), float(bounds2[2]), float(bounds2[3]))
-    if equal_area_boundingbox.area / 10000 < 100:
-        return HttpResponse('Selected area too small, please select an area over 100 ha')
     if equal_area_boundingbox.area / 10000 > 1000:
         return HttpResponse('Selected area too large, please select an area under 1000 ha')
 
@@ -72,7 +81,6 @@ def get_gif(request):
     os.environ["AWS_REQUEST_PAYER"] = "requester"
 
     keys = get_s3_urls(first_tile, search_results, toa)
-
     if len(keys) > 10:
         keys = keys[:10]
     logging.info(keys)

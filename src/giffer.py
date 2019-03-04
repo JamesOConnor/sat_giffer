@@ -17,7 +17,7 @@ from rasterio.warp import calculate_default_transform, Resampling
 session = rasterio.Env(
     AWSSession(aws_access_key_id=settings.AWS_KEY, aws_secret_access_key=settings.AWS_SECRET)) if 'test' not in \
                                                                                                   sys.argv[0] else None
-MAX_WORKERS = 4
+MAX_WORKERS = 20
 
 
 def get_cropped_data_from_bucket(band, key, bounds, vrt_params, out_crs):
@@ -34,13 +34,11 @@ def get_cropped_data_from_bucket(band, key, bounds, vrt_params, out_crs):
     with session:
         with rasterio.open(f) as src:
             vrt_transform, vrt_width, vrt_height = get_vrt_transform(src, bounds, bounds_crs=out_crs)
-
             vrt_width = round(vrt_width)
             vrt_height = round(vrt_height)
             vrt_params.update(
                 dict(transform=vrt_transform, width=vrt_width, height=vrt_height)
             )
-
             with WarpedVRT(src, **vrt_params) as vrt:
                 data = vrt.read(
                     out_shape=(1, vrt_height, vrt_width),
