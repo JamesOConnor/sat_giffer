@@ -40,7 +40,7 @@ def get_gif(request):
     toa = request.GET.get('toa', True)
     start_date = request.GET.get('start_date')
     if not start_date:
-        start_date = '01/10/2018'
+        start_date = '10/01/2018'
     end_date = request.GET.get('end_date', None)
     start_date = date_formatter(start_date)
     end_date = date_formatter(end_date)
