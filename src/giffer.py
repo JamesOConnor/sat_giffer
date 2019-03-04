@@ -1,4 +1,5 @@
 import gc
+import logging
 import math
 import sys
 from concurrent import futures
@@ -33,6 +34,7 @@ def get_cropped_data_from_bucket(band, key, bounds, vrt_params, out_crs):
     f = key + 'B0%s.jp2' % band
     with session:
         with rasterio.open(f) as src:
+            logging.info('Getting data for file {f}'.format(f=f))
             vrt_transform, vrt_width, vrt_height = get_vrt_transform(src, bounds, bounds_crs=out_crs)
             vrt_width = round(vrt_width)
             vrt_height = round(vrt_height)
@@ -40,6 +42,7 @@ def get_cropped_data_from_bucket(band, key, bounds, vrt_params, out_crs):
                 dict(transform=vrt_transform, width=vrt_width, height=vrt_height)
             )
             with WarpedVRT(src, **vrt_params) as vrt:
+                logging.info('Getting data from bucket for {f}'.format(f=f))
                 data = vrt.read(
                     out_shape=(1, vrt_height, vrt_width),
                     resampling=Resampling.bilinear,
@@ -54,11 +57,12 @@ def rgb_for_key(key, bounds=None, vrt_params=None, out_crs=None):
     Loops over Blue, Green and Red Sentinel bands to build a color image
     :param key:
     :param bounds:
-    :param vrt_params:
+    :param vrt_paramsdjango-extensions==2.1.5:
     :param out_crs:
     :return:
     """
     bands = ['2', '3', '4']
+    logging.info('Getting data for key {key}'.format(key=key))
     _worker = partial(get_cropped_data_from_bucket, key=key, bounds=bounds, vrt_params=vrt_params, out_crs=out_crs)
     with futures.ProcessPoolExecutor(max_workers=3) as executor:
         try:
