@@ -36,5 +36,5 @@ six==1.11.0
 snuggs==1.4.2
 tifffile==2018.10.18
 timeout-decorator==0.4.0
-urllib3==1.24.1
+urllib3==1.24.2
 utm==0.4.2
