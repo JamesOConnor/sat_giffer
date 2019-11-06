@@ -4,8 +4,6 @@
 
 Downloads and presents sentinel data in gif form! Default is to get atmospherically corrected data, which is limited to certain regions.
 
-[Demo hosted here](http://ec2-35-159-51-103.eu-central-1.compute.amazonaws.com/). It's a micro-instance so tends to give up sometimes :X
-
 ![Should be here](https://s3.eu-central-1.amazonaws.com/sat-giffer/demo-gif.gif)
 
 ### Description ###
